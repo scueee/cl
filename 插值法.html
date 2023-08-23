@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=2.0, user-scalable=yes"/> 
+<title>插值法</title>
+<link rel="stylesheet" href="https://cdn.bootcss.com/KaTeX/0.11.1/katex.min.css">
+<script defer src="https://cdn.bootcss.com/KaTeX/0.11.1/katex.min.js"></script>
+<script defer src="https://cdn.bootcss.com/KaTeX/0.11.1/contrib/auto-render.min.js"></script>
+<style>
+html, body {
+  height: 100%;
+  background: hsl(216, 69%, 95%);
+}
+input {
+  border: 3px solid rgba(0, 0, 0, .09);
+  border-radius: 8px;
+  font-size: 45px;
+  text-align: center;
+  background: transparent;
+  color: hsl(216, 90%, 43%);
+  font-family: 'Monaco', monospace;
+  font-weight: 700;
+  transition: border .2s ease, background .2s ease;
+  outline: none;
+  background: rgba(0, 0, 0, .01);
+  max-width: 95vw;
+}
+input:hover {
+  border: 3px solid rgba(0, 0, 0, .23);
+}
+input:focus {
+  border: 3px solid hsl(216, 90%, 43%);
+  background: hsla(204, 100%, 88%, .4);
+}
+body {
+  margin: 0;
+  padding: 10vh 0 5vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+mark {
+  background: hsl(138, 56%, 85%);
+  color: hsl(138, 90%, 43%);
+  font-family: 'Monaco', monospace;
+  font-weight: 700;
+  margin: 12px;
+  padding: 0 16px;
+  height: 64px;
+  line-height: 64px;
+  font-size: 40px;
+  border-radius: 32px;
+}
+
+ul > li {
+  list-style: none;
+}
+
+.homo-value {
+  color: hsl(15, 99%, 57%);
+}
+</style>
+</head>
+<body>
+
+<input placeholder="数字间逗号分隔" value="1,3,5,7,?" id="numbers" />
+<h1>试着找出问号所代表的数</h1>
+<p> 正确答案是</p>
+<mark>114514</mark>
+<p>因为当</p>
+<div id="function"></div>
+<ul id="function-values"></ul>
+
+</body>
+<script type="module">
+//线性方程组（n元一次方程组）求解库
+import * as linear from "https://cdn.skypack.dev/linear-solve@1.2.1";
+
+const functionContainer = document.getElementById('function');
+const functionValuesContainer = document.getElementById('function-values');
+
+document.getElementById('numbers').addEventListener('input', ({target}) => {
+  //清除旧函数
+  functionValuesContainer.innerHTML = '';
+  functionContainer.innerHTML = '';
+  
+  const numbers = target.value.split(',').map(number => {
+    const parsed = parseFloat(number);
+    return isFinite(parsed) ? parsed : 114514; //NaN、Infinity当问号处理
+  });
+  const exponents = Array(numbers.length).fill(numbers.length - 1).map((number, exponent) => number - exponent);
+  const products = linear.solve(Array(numbers.length).fill(0).map(
+    (v, index) => exponents.map(exponent => (index + 1) ** exponent)
+  ), [...numbers])
+  .map((solution, index, solutions) => {
+    let product = '';
+    if(solution) {
+      if(index) product += solution > 0 ? '+' : '-';
+      product += Math.abs(solution).toFixed(3);
+      if(solutions.length - index - 1) {
+        product += 'x';
+        if(solutions.length - index - 2) product += `^${exponents[index]}`;
+      }
+    }
+    return product;
+  });
+  katex.render(`f(x) = ${products.join('')}`, functionContainer, {
+    throwOnError: false
+  });
+  for(let [index, number] of numbers.entries()) {
+    const functionValue = document.createElement('li');
+    if(number === 114514) functionValue.classList.add('homo-value');
+    katex.render(`f(${index + 1}) = ${number}`, functionValue, {
+      throwOnError: false
+    });
+    functionValuesContainer.append(functionValue);
+  }
+});
+
+document.getElementById('numbers').dispatchEvent(new InputEvent('input'));
+</script>
+</html>
